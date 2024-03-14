@@ -37,4 +37,10 @@ router.post('/', async (req, res) => {
     })
 })
 
+// Get all users
+router.get('/', async (req, res) => {
+    const allUsers = await prisma.user.findMany()
+    res.json(allUsers)
+})
+
 export default router
