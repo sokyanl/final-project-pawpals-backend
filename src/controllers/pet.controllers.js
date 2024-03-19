@@ -135,20 +135,20 @@ router.get("/found", async (req, res) => {
     }
 });
 
-//9. everyone can view post by pet status = reunited 
-// router.get("/reunited", async (req, res) => {
-//     try {
-//         const reunitedPetPosts = await prisma.pet.findMany({
-//             where: {
-//                 pet_status: 'reunited' 
-//             }
-//         });
-//         res.json(reunitedPetPosts);
-//     } catch (error) {
-//         console.error("Error retrieving reunited pet posts:", error);
-//         res.status(500).json({ error: "Internal Server Error" });
-//     }
-// });
+// 9. everyone can view post by pet status = reunited 
+router.get("/reunited", async (req, res) => {
+    try {
+        const reunitedPetPosts = await prisma.pet.findMany({
+            where: {
+                pet_status: 'reunited' 
+            }
+        });
+        res.json(reunitedPetPosts);
+    } catch (error) {
+        console.error("Error retrieving reunited pet posts:", error);
+        res.status(500).json({ error: "Internal Server Error" });
+    }
+});
 
 
 //5. view pet post by petId (individual post) DONE
