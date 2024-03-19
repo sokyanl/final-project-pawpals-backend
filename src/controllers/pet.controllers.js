@@ -2,36 +2,102 @@ import express from "express";
 import prisma from "../utils/prisma.js";
 import { Prisma } from "@prisma/client";
 import auth from "../middlewares/auth.js";
+import { validatorPet } from "../validators/pet.js";
 
 const router = express.Router();
 
-
-//1. sign in user can upload post DONE
-router.post("/", auth, async (req,res) => {
-    const data = req.body;
-    
-    prisma.pet.create({
-        data: {
-            userId:req.user.payload.id,
-            ...data, 
+// Function to geocode the address using MapTiler Geocoding API(Search by name)
+async function geocodeAddress(locationName, apiKey) {
+    const apiUrl = `https://api.maptiler.com/geocoding/${encodeURIComponent(locationName)}.json?key=${apiKey}`;
+//using encodeURIComponent() to handle special characters
+    try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) {
+            throw new Error('Failed to fetch data from MapTiler Geocoding API');
         }
-    })
-    .then((pet) => {
-        return res.json(pet);
-    })
-    .catch((err) => {
-        if (
-            err instanceof Prisma.PrismaClientKnownRequestError && err.code ==="P2002") {
-                const formattedError = {};
-                formattedError[`${err.meta.target[0]}`] = "already taken";
+        //if successful,parses the json response and extracts the latitude and longitude coordinates from the response data
+        const data = await response.json();
+        if (data.features && data.features.length > 0) {
+            const [longitude , latitude] = data.features[0].geometry.coordinates;
+            return { latitude, longitude };
+        } else {
+            throw new Error('No matching location found');
+        }
+    } catch (error) {
+        console.error('Error geocoding address:', error);
+        // throw error;
+    }
+}
 
-                return res.status(500).send({
-                    error:formattedError,  //error handling
-                });
+// Endpoint to allow signed-in users to upload pet posts with geocoding
+router.post("/", auth, async (req, res) => {
+    const data = req.body;
+    const apiKey = 'DUF0BjubfLYkZZd6KVXw'; //MapTiler API key,will move to .env file MAPTILER_API_KEY=DUF0BjubfLYkZZd6KVXw
+    //const apiKey = process.env.MAPTILER_API_KEY;
+    const validationErrors = validatorPet(data);
+    try {
+        // Geocode the address to obtain latitude and longitude coordinates
+        const { latitude, longitude } = await geocodeAddress(data.pet_location, apiKey);
+
+        if (Object.keys(validationErrors).length != 0)
+           return res.status(400).send({
+             error: validationErrors,
+        });
+
+        // Store the pet details in the database, including the obtained coordinates
+        const newPetPost = await prisma.pet.create({
+            data: {
+                user: { connect: { id: req.user.payload.id } },
+                ...data,
+                latitude,
+                longitude
             }
-            throw err; // if this happens, our backend application will crash and not respond to the client. because we don't recognize this error yet, we don't know how to handle it in a friendly manner. we intentionally throw an error so that the error monitoring service we'll use in production will notice this error and notify us and we can then add error handling to take care of previously unforeseen errors.
-    });
+        });
+
+        // Respond with the newly created pet object
+        res.status(201).json(newPetPost);
+    } catch (error) {
+        console.error('Error adding pet:', error);
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code ==="P2002") {
+            const formattedError = {};
+            formattedError[`${error.meta.target[0]}`] = "already taken";
+            return res.status(500).send({
+                error: formattedError,  //error handling
+            });
+        } else {
+            res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
 });
+
+
+// 1. sign in user can upload post DONE
+// router.post("/", auth, async (req,res) => {
+//     const data = req.body;
+// const validationErrors = validatorPet(data);
+
+//     prisma.pet.create({
+//         data: {
+//             userId:req.user.payload.id,
+//             ...data, 
+//         }
+//     })
+//     .then((pet) => {
+//         return res.json(pet);
+//     })
+//     .catch((err) => {
+//         if (
+//             err instanceof Prisma.PrismaClientKnownRequestError && err.code ==="P2002") {
+//                 const formattedError = {};
+//                 formattedError[`${err.meta.target[0]}`] = "already taken";
+
+//                 return res.status(500).send({
+//                     error:formattedError,  //error handling
+//                 });
+//             }
+//             throw err; // if this happens, our backend application will crash and not respond to the client. because we don't recognize this error yet, we don't know how to handle it in a friendly manner. we intentionally throw an error so that the error monitoring service we'll use in production will notice this error and notify us and we can then add error handling to take care of previously unforeseen errors.
+//     });
+// });
 
 //2. everyone can view all posts DONE
 router.get("/",async (req,res) => {
@@ -68,6 +134,22 @@ router.get("/found", async (req, res) => {
         res.status(500).json({ error: "Internal Server Error" });
     }
 });
+
+//9. everyone can view post by pet status = reunited 
+// router.get("/reunited", async (req, res) => {
+//     try {
+//         const reunitedPetPosts = await prisma.pet.findMany({
+//             where: {
+//                 pet_status: 'reunited' 
+//             }
+//         });
+//         res.json(reunitedPetPosts);
+//     } catch (error) {
+//         console.error("Error retrieving reunited pet posts:", error);
+//         res.status(500).json({ error: "Internal Server Error" });
+//     }
+// });
+
 
 //5. view pet post by petId (individual post) DONE
 router.get("/:id",async (req,res) =>{
