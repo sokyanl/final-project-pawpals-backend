@@ -27,4 +27,7 @@ router.post("/:petId", auth, async (req,res) => {
     });
 });
 
+export default router;
+
 // 2. users can see all comments on a specific post
+
