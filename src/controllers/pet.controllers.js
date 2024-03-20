@@ -32,8 +32,7 @@ async function geocodeAddress(locationName, apiKey) {
 // Endpoint to allow signed-in users to upload pet posts with geocoding
 router.post("/", auth, async (req, res) => {
     const data = req.body;
-    const apiKey = 'DUF0BjubfLYkZZd6KVXw'; //MapTiler API key,will move to .env file MAPTILER_API_KEY=DUF0BjubfLYkZZd6KVXw
-    //const apiKey = process.env.MAPTILER_API_KEY;
+    const apiKey = process.env.MAPTILER_API_KEY;
     const validationErrors = validatorPet(data);
     try {
         // Geocode the address to obtain latitude and longitude coordinates
@@ -55,7 +54,7 @@ router.post("/", auth, async (req, res) => {
         });
 
         // Respond with the newly created pet object
-        res.status(201).json(newPetPost);
+        res.status(200).json(newPetPost);
     } catch (error) {
         console.error('Error adding pet:', error);
         if (error instanceof Prisma.PrismaClientKnownRequestError && error.code ==="P2002") {
