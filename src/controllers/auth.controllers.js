@@ -38,7 +38,7 @@ router.post('/', async (req, res) => {
     // gives the user an access token
     const userFiltered = filter(user, 'id', 'name', 'email')
     const accessToken = await signAccessToken(userFiltered)
-    return res.json({ accessToken })
+    return res.json({ accessToken, userFiltered })
   })
 
   export default router

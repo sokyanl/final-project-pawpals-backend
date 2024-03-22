@@ -157,6 +157,14 @@ router.get("/:id",async (req,res) =>{
         where:{
             id: petId,
         },
+        include: {
+            user:true,
+            Comment: {
+                include: {
+                    user: true,
+                },
+            },
+        },
     });
     res.json(petPostByUser);
 });
@@ -218,6 +226,9 @@ router.get("/users/:id",auth, async (req,res) => {
     const pet = await prisma.pet.findMany({
         where:{
             userId : userId,
+        },
+        include: {
+            user:true,
         },
     });
     return res.json(pet);
