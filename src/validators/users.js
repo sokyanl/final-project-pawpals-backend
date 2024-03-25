@@ -9,11 +9,9 @@ export function validateUser(input) {
         validationErrors['email'] = 'cannot be blank'
     }
 
-    if (!('password' in input) || input['password'].length == 0) {
+    if (!('password' in input) || input['password'].length === 0) {
         validationErrors['password'] = 'cannot be blank'
-    }
-
-    if ('password' in input && input['password'].length < 8) {
+    } else if (input['password'].length < 8) {
         validationErrors['password'] = 'should be at least 8 characters'
     }
 
