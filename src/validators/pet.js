@@ -17,5 +17,17 @@ export function validatorPet(input) {
         validationErrors["pet_location"] = "cannot be blank";
     }
 
+    if (input["pet_type"] === "Select one") {
+        validationErrors["pet_type"] = "Please select a pet type";
+    }
+
+    if (!("pet_gender" in input) || input["pet_gender"] === "Select one") {
+        validationErrors["pet_gender"] = "Please select a pet gender";
+    }
+
+    if (!("pet_status" in input) || input["pet_status"] === "Select one") {
+        validationErrors["pet_status"] = "Please select a pet status";
+    }
+
     return validationErrors;
 }
