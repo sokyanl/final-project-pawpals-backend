@@ -180,6 +180,12 @@ router.put("/:id", auth, async (req, res) => {
   const petId = parseInt(req.params.id);
   //to retrive updated pet data from req body
   const petData = req.body;
+  const validationErrors = validatorPet(petData);
+
+  if (Object.keys(validationErrors).length != 0)
+      return res.status(400).send({
+        error: validationErrors,
+      });
 
   const currentPetPost = await prisma.pet.findUnique({
     where: {
